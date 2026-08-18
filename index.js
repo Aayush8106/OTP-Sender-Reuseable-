@@ -20,6 +20,8 @@ app.get("/", (req, res) => {
     });
 });
 
+console.log("code started.")
+
 app.post("/register-otp", async (req, res) => {
 
     console.log("REGISTER OTP REQUEST RECEIVED");
