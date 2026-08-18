@@ -1,11 +1,9 @@
 import express from "express";
 import nodemailer from "nodemailer";
-import dotenv from "dotenv";
 
 const app = express();
 
 app.use(express.json());
-dotenv.config();
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -13,6 +11,13 @@ const transporter = nodemailer.createTransport({
         user: process.env.MAIL,
         pass: process.env.PASS
     }
+});
+
+app.get("/", (req, res) => {
+    res.json({
+        success: true,
+        message: "OTP server is running"
+    });
 });
 
 app.post("/register-otp", async (req, res) => {
@@ -34,9 +39,7 @@ app.post("/register-otp", async (req, res) => {
             from: process.env.MAIL,
             to: mail,
             subject: "OTP Verification",
-            html: `
-                <h2>Your OTP is: <b>${otp}</b></h2>
-            `
+            html: `<h2>Your OTP is: <b>${otp}</b></h2>`
         });
 
         return res.status(200).json({
