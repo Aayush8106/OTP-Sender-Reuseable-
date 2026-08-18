@@ -1,0 +1,19 @@
+{
+  "name": "otp-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "OTP.js",
+  "scripts": {
+    "start": "node OTP.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Aayush",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemailer": "^9.0.5"
+  }
+}
