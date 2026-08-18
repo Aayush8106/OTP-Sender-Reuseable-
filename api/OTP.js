@@ -1,9 +1,11 @@
 import express from "express";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 
 const app = express();
 
 app.use(express.json());
+dotenv.config();
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -15,8 +17,11 @@ const transporter = nodemailer.createTransport({
 
 app.post("/register-otp", async (req, res) => {
 
+    console.log("REGISTER OTP REQUEST RECEIVED");
+
     if (req.headers["x-api-key"] !== process.env.MAIL_SERVICE_KEY) {
         return res.status(401).json({
+            success: false,
             error: "Unauthorized"
         });
     }
@@ -40,11 +45,11 @@ app.post("/register-otp", async (req, res) => {
 
     } catch (error) {
 
-        console.error("Mail error:", error);
+        console.error("SMTP ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            error: "Failed to send mail"
+            error: "Failed to send email"
         });
     }
 });
