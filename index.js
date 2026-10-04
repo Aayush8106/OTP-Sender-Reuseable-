@@ -219,4 +219,56 @@ app.post("/forgot-otp", async (req, res) => {
     }
 });
 
+// new api
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN || "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+
+app.use("/contact", (req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Vary", "Origin");
+        res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    }
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    next();
+});
+
+const oneLine = (v, max) =>
+    String(v ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, max);
+
+app.post("/contact", async (req, res) => {
+    const name = oneLine(req.body?.name, 100);
+    const company = oneLine(req.body?.company, 100);
+    const email = oneLine(req.body?.email, 200);
+    const message = String(req.body?.message ?? "").trim().slice(0, 3000);
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!name || !emailOk || !message) {
+        return res.status(400).json({
+            success: false,
+            error: "Please fill in your name, a valid email and a message."
+        });
+    }
+
+    try {
+        await transporter.sendMail({
+            from: process.env.MAIL,
+            to: process.env.CONTACT_TO || process.env.MAIL,
+            replyTo: email,
+            subject: `Portfolio contact: ${name}${company ? ` (${company})` : ""}`,
+            text: `Name: ${name}\nEmail: ${email}\nCompany: ${company || "-"}\n\n${message}`
+        });
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("SMTP ERROR:", error);
+        return res.status(500).json({
+            success: false,
+            error: "Could not send your message. Please try again later."
+        });
+    }
+});
+
 export default app;
