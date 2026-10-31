@@ -6,8 +6,9 @@ const app = express();
 
 app.use(cors({
     origin: [
-        'http://localhost:3000',                     // Allows your local development environment
-        'https://currentliveprojects.in'             // Allows your production frontend domain
+        'http://localhost:3000',                     // Allows local development
+        'https://currentliveprojects.in',             // Allows root production domain
+        'https://www.currentliveprojects.in'         // 🚀 ADD THIS: Allows www subdomain
     ],
     methods: ['POST', 'GET', 'OPTIONS'],             // Explicitly allows browser preflight checks
     allowedHeaders: ['Content-Type', 'x-api-key']    // Allows your custom API key header
