@@ -219,31 +219,18 @@ app.post("/forgot-otp", async (req, res) => {
     }
 });
 
-// new api
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
-
-app.use("/contact", (req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin && ALLOWED_ORIGINS.includes(origin)) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Vary", "Origin");
-        res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    }
-    if (req.method === "OPTIONS") return res.sendStatus(204);
-    next();
-});
-
-const oneLine = (v, max) =>
-    String(v ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, max);
 
 app.post("/contact", async (req, res) => {
-    const name = oneLine(req.body?.name, 100);
-    const company = oneLine(req.body?.company, 100);
-    const email = oneLine(req.body?.email, 200);
-    const message = String(req.body?.message ?? "").trim().slice(0, 3000);
+
+    if (req.headers["x-api-key"] !== process.env.MAIL_SERVICE_KEY) {
+        return res.status(401).json({
+            success: false,
+            error: "Unauthorized"
+        });
+    }
+
+    const{name , company , email , message} = req.body;
 
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!name || !emailOk || !message) {
@@ -256,11 +243,49 @@ app.post("/contact", async (req, res) => {
     try {
         await transporter.sendMail({
             from: process.env.MAIL,
-            to: process.env.CONTACT_TO || process.env.MAIL,
-            replyTo: email,
+            to: email,
             subject: `Portfolio contact: ${name}${company ? ` (${company})` : ""}`,
-            text: `Name: ${name}\nEmail: ${email}\nCompany: ${company || "-"}\n\n${message}`
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <h2 style="color: #333;">Hi ${name},</h2>
+            <p style="font-size: 16px; color: #555; line-height: 1.5;">
+                Thank you for reaching out! I have successfully received your message sent via my portfolio contact form.
+            </p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #0070f3; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #333;">Message Copy:</h4>
+                <p style="font-style: italic; color: #666; margin-bottom: 0;">"${message}"</p>
+            </div>
+            <p style="font-size: 16px; color: #555; line-height: 1.5;">
+                I will review your details and get back to you as soon as possible. 
+            </p>
+            <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+            <p style="font-size: 14px; color: #999; margin-bottom: 0;">
+                Best regards,<br />
+                <strong>Aayush Patel</strong><br />
+                <a href="https://currentliveprojects.in" style="color: #0070f3; text-decoration: none;">currentliveprojects.in</a>
+            </p>
+        </div>
+    `
         });
+
+         await transporter.sendMail({
+            from: process.env.MAIL,
+            to: process.env.CONTACT_TO || process.env.MAIL, // Fallback if CONTACT_TO isn't set
+            subject: `💼 New Portfolio Message from ${name}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                    <h2 style="color: #0070f3; margin-top: 0;">New Contact Form Submission</h2>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+                    ${company ? `<p><strong>Company:</strong> ${company}</p>` : ''}
+                    <div style="margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 4px;">
+                        <strong>Message:</strong>
+                        <p style="white-space: pre-wrap; margin-top: 5px;">${message}</p>
+                    </div>
+                </div>
+            `
+        });
+
         return res.status(200).json({ success: true });
     } catch (error) {
         console.error("SMTP ERROR:", error);
