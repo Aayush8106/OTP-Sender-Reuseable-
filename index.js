@@ -1,7 +1,17 @@
 import express from "express";
 import nodemailer from "nodemailer";
+import cors from 'cors';
 
 const app = express();
+
+app.use(cors({
+    origin: [
+        'http://localhost:3000',                     // Allows your local development environment
+        'https://currentliveprojects.in'             // Allows your production frontend domain
+    ],
+    methods: ['POST', 'GET', 'OPTIONS'],             // Explicitly allows browser preflight checks
+    allowedHeaders: ['Content-Type', 'x-api-key']    // Allows your custom API key header
+}));
 
 app.use(express.json());
 
