@@ -307,4 +307,32 @@ app.post("/contact", async (req, res) => {
     }
 });
 
+app.post("/societyops-otp", async (req, res) => {
+
+    if (req.headers["x-api-key"] !== process.env.MAIL_SERVICE_KEY) {
+        return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    const { mail, otp } = req.body;
+
+    const mailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
+    if (!mailOk || !otp) {
+        return res.status(400).json({ success: false, error: "Valid mail and otp required" });
+    }
+
+    try {
+        await transporter.sendMail({
+            from: process.env.MAIL,
+            to: mail,
+            subject: "Society: verification code",
+            html: `<h2>Your Society code is: <b>${otp}</b></h2><p>It expires in 5 minutes.</p>`
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("SMTP ERROR:", error);
+        return res.status(500).json({ success: false, error: "Failed to send email" });
+    }
+});
+
 export default app;
